@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: roadmaps
+    // Fields: name (string), description (string), ownerId (string), createdAt (timestamp), sprintStartDate (timestamp)
+    //
+    // Sub-collection: roadmaps/{id}/features
+    // Fields: name (string), description (string), startDate (timestamp), endDate (timestamp), color (string), priority (number), order (number)
+    //
+    // Sub-collection: roadmaps/{id}/teamMembers
+    // Fields: name (string), color (string)
+    //
+    // Sub-collection: roadmaps/{id}/leaves
+    // Fields: memberId (string), startDate (timestamp), endDate (timestamp), label (string)
+    //
+    // Sub-collection: roadmaps/{id}/milestones
+    // Fields: name (string), date (timestamp), color (string)
+    //
+    // Collection: users
+    // Fields: email (string), role (string)
+    //
+    // ===============================================================
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((request.auth.token.email == "richard.gaudin@gmail.com" && request.auth.token.email_verified == true) ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    function isValidString(field, min, max) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= min && 
+             request.resource.data[field].size() <= max;
+    }
+
+    function isValidOptionalString(field, min, max) {
+      return !(field in request.resource.data) || (request.resource.data[field] is string && 
+             request.resource.data[field].size() >= min && 
+             request.resource.data[field].size() <= max);
+    }
+
+    function isValidTimestamp(field) {
+      return request.resource.data[field] is timestamp;
+    }
+
+    // Roadmaps
+    match /roadmaps/{roadmapId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && 
+        isValidString('name', 1, 100) &&
+        isValidOptionalString('description', 0, 500) &&
+        isValidString('ownerId', 1, 100) &&
+        isValidTimestamp('createdAt') &&
+        isValidTimestamp('sprintStartDate');
+      allow delete: if isAdmin();
+
+      // Features
+      match /features/{featureId} {
+        allow read: if true;
+        allow create, update: if isAdmin() && 
+          isValidString('name', 1, 100) &&
+          isValidOptionalString('description', 0, 1000) &&
+          isValidTimestamp('startDate') &&
+          isValidTimestamp('endDate') &&
+          isValidString('color', 1, 50) &&
+          (!( 'priority' in request.resource.data ) || (request.resource.data.priority is number && request.resource.data.priority >= 1 && request.resource.data.priority <= 5)) &&
+          (request.resource.data.order is number);
+        allow delete: if isAdmin();
+      }
+
+      // Team Members
+      match /teamMembers/{memberId} {
+        allow read: if true;
+        allow create, update: if isAdmin() && 
+          isValidString('name', 1, 50) &&
+          isValidString('color', 1, 50);
+        allow delete: if isAdmin();
+      }
+
+      // Leaves
+      match /leaves/{leaveId} {
+        allow read: if true;
+        allow create, update: if isAdmin() && 
+          isValidString('memberId', 1, 50) &&
+          isValidTimestamp('startDate') &&
+          isValidTimestamp('endDate');
+        allow delete: if isAdmin();
+      }
+
+      // Milestones
+      match /milestones/{milestoneId} {
+        allow read: if true;
+        allow create, update: if isAdmin() && 
+          isValidString('name', 1, 100) &&
+          isValidTimestamp('date') &&
+          isValidString('color', 1, 50);
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Legacy Settings (to be removed once migrated)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Feature": {
+      "title": "Feature",
+      "description": "A project feature or task in the timeline",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" },
+        "priority": { "type": "number", "enum": [1, 2, 3, 4, 5] },
+        "order": { "type": "number" },
+        "startSprint": { "type": "number" },
+        "endSprint": { "type": "number" }
+      },
+      "required": ["name", "startDate", "endDate", "color", "order"]
+    },
+    "TeamMember": {
+      "title": "TeamMember",
+      "description": "A member of the project team",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["name", "color"]
+    },
+    "Leave": {
+      "title": "Leave",
+      "description": "Absence or leave for a team member",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "label": { "type": "string" }
+      },
+      "required": ["memberId", "startDate", "endDate"]
+    },
+    "Milestone": {
+      "title": "Milestone",
+      "description": "A key project milestone",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" }
+      },
+      "required": ["name", "date", "color"]
+    },
+    "Roadmap": {
+      "title": "Roadmap",
+      "description": "A project roadmap containing all related data",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sprintStartDate": { "type": "string", "format": "date-time" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user with role",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "viewer"] }
+      },
+      "required": ["email", "role"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "monthsToShow": { "type": "number" },
+        "showSprints": { "type": "boolean" },
+        "sprintStartDate": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/roadmaps/{roadmapId}": {
+      "schema": "Roadmap",
+      "description": "Roadmap metadata and settings"
+    },
+    "/roadmaps/{roadmapId}/features/{featureId}": {
+      "schema": "Feature",
+      "description": "Roadmap features"
+    },
+    "/roadmaps/{roadmapId}/teamMembers/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Roadmap team members"
+    },
+    "/roadmaps/{roadmapId}/leaves/{leaveId}": {
+      "schema": "Leave",
+      "description": "Roadmap team member leaves"
+    },
+    "/roadmaps/{roadmapId}/milestones/{milestoneId}": {
+      "schema": "Milestone",
+      "description": "Roadmap milestones"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User roles and permissions"
+    }
+  }
+}
